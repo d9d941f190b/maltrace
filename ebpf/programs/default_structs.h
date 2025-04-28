@@ -11,9 +11,11 @@ struct format_syscall_execve {
 
 
 struct format_syscall_openat {
-
-
-
+    int __syscall_nr;
+    int dfd;
+    const char *filename;
+    int flags;
+    int mode;
 };
 
 #endif // __DEFAULT_STRUCTS_H__

@@ -12,7 +12,6 @@ all: $(OUTPUT) $(BPF_OBJ) go-build
 $(OUTPUT):
 	mkdir -p $(OUTPUT)
 
-# Generate vmlinux.h if needed
 $(VMLINUXH):
 	@echo "Generating vmlinux.h from kernel BTF"
 	$(BPFTOOL) btf dump file /sys/kernel/btf/vmlinux format c > $(VMLINUXH)

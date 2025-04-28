@@ -16,12 +16,11 @@ struct execve_event {
 };
 
 struct openat_event {
-    __u64 paramtype;
     __u32 host_pid;
     __u32 host_ppid;
-
     char filename[256];
     __u64 flags;
+    __u64 mode;
 };
 
 #endif // __CUSTOM_STRUCTS_H__

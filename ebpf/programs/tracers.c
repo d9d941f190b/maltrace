@@ -1,4 +1,4 @@
-#include "../include/vmlinux.h"
+#include "../../include/vmlinux.h"
 
 // BPF
 #include <bpf/bpf_core_read.h>
@@ -89,13 +89,12 @@ int trace_openat_syscall(struct format_syscall_openat *ctx)
     char *filename_ptr = (char *)ctx->filename;
     bpf_core_read_user_str(&e->filename, sizeof(e->filename), filename_ptr);
 
+    // Parse flags and mdoe
     e->flags = (u64)ctx->flags;    
     e->mode = (u64)ctx->mode;
+
+    // Submit event to userspace
     bpf_ringbuf_submit(e, 0);
-
-    return 0;
-
-
 
     return 0;
 }
