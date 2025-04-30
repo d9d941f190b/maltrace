@@ -11,8 +11,10 @@
 #include "custom_structs.h"
 
 #define MAX_ARG_LEN 256
-#define EVENT_TYPE_EXECVE 1
-#define EVENT_TYPE_OPENAT 2
+/*IMPLEMENT CUSTOM MAP FOR THIS IN C AND TAKE VARIABLES FROM HERE*/
+#define EVENT_TYPE_EXECVE 5
+#define EVENT_TYPE_OPENAT 6
+
 // BPF ringbuf map
 struct {
     __uint(type, BPF_MAP_TYPE_RINGBUF);
@@ -30,6 +32,7 @@ int trace_execve_syscall(struct format_syscall_execve *ctx){
         return 0;
     }
     e->eventId = EVENT_TYPE_EXECVE;
+
     // Host and Parent tasks
     struct task_struct *task = (struct task_struct *)bpf_get_current_task();
     struct task_struct *parent_task = BPF_CORE_READ(task, real_parent);

@@ -15,8 +15,13 @@ var FnToSys = map[string]string{
 	FN_OPENAT: SYS_OPENAT,
 }
 
+// This mapping is used to convert syscall numbers to syscall names,
+// this is referenced in C code and custom_structs header file.
+//
+// Reference is Linux kernel v6.7: https://github.com/torvalds/linux/blob/v6.7/arch/x86/entry/syscalls/syscall_64.tbl
 var SysToName = map[uint32]string{
+	/*Integrate later*/
 	/*Group by operatio ntype -> network,process,filesystem*/
-	1: "execve",
-	2: "openat",
+	5: "execve",
+	6: "openat",
 }

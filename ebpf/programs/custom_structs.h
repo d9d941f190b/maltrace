@@ -7,7 +7,7 @@
 #define MAX_ARGS 20
 
 struct execve_event {
-    __u8 eventId;
+    __u32 eventId;
     __u32 host_pid;
     __u32 host_ppid;
     char filename[256];
@@ -17,7 +17,7 @@ struct execve_event {
 };
 
 struct openat_event {
-    __u8 eventId;
+    __u32 eventId;
     __u32 host_pid;
     __u32 host_ppid;
     char filename[256];

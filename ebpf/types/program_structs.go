@@ -12,18 +12,20 @@ const (
 )
 
 // General syscall event structure
-type SyscallEvent struct {
-	Pid         uint32
-	Tgid        uint32
-	Uid         uint32
-	ReturnValue int64
-	SyscallID   uint32
-	Comm        [MAX_DATA_SIZE]byte
-	Timestamp   uint64
-	Args        [6]uint64
-}
+// type SyscallEvent struct {
+// 	EventID     uint32
+// 	Pid         uint32
+// 	Tgid        uint32
+// 	Uid         uint32
+// 	ReturnValue int64
+// 	SyscallID   uint32
+// 	Comm        [MAX_DATA_SIZE]byte
+// 	Timestamp   uint64
+// 	Args        [6]uint64
+// }
 
 type ExecveEvent struct {
+	EventID   uint32
 	Pid       uint32
 	PPid      uint32
 	Filename  [MAX_FILENAME_LEN]byte
@@ -33,6 +35,7 @@ type ExecveEvent struct {
 }
 
 type OpenatEvent struct {
+	EventID  uint32
 	Pid      uint32
 	PPid     uint32
 	Filename [MAX_FILENAME_LEN]byte
@@ -40,17 +43,16 @@ type OpenatEvent struct {
 	Mode     uint32
 }
 
-type EventType uint8
+type EventType uint32
 
 const (
-	EVENT_SYSCALL EventType = iota
-	EVENT_EXECVE
-	EVENT_OPENAT
+	EVENT_EXECVE = 5
+	EVENT_OPENAT = 6
 )
 
 type Event struct {
+	EventID    uint32
 	Type       EventType
-	Syscall    SyscallEvent
 	Execve     ExecveEvent
 	Openat     OpenatEvent
 	Timestamp  time.Time

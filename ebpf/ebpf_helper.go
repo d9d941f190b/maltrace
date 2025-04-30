@@ -164,11 +164,19 @@ func (p *EBPFProgram) processRawEvents(rawChannel chan []byte) {
 			if len(data) < 1 {
 				continue
 			}
-			// log.Println(data[1:])
 			// First byte indicates event type
 			eventType := types.EventType(data[0])
+
+			// Check if the event type is valid
+			_, exists := types.SysToName[uint32(eventType)]
+			if !exists {
+				log.Printf("Unknown event type: %d", eventType)
+				continue
+			}
+			// Create a new event struct
 			event := types.Event{
 				Type:      eventType,
+				EventID:   uint32(eventType),
 				Timestamp: time.Now(),
 			}
 
@@ -212,45 +220,45 @@ func (p *EBPFProgram) processRawEvents(rawChannel chan []byte) {
 	}
 }
 
-// logSyscallEvent creates a log entry for a syscall event
-func (p *EBPFProgram) logSyscallEvent(event *types.SyscallEvent) string {
-	p.mu.Lock()
-	defer p.mu.Unlock()
+// General syscall event logging
+// func (p *EBPFProgram) logSyscallEvent(event *types.SyscallEvent) string {
+// 	p.mu.Lock()
+// 	defer p.mu.Unlock()
 
-	syscallName := "unknown"
-	if name, ok := types.SysToName[event.SyscallID]; ok {
-		syscallName = name
-	}
+// 	syscallName := "unknown"
+// 	if name, ok := types.SysToName[event.SyscallID]; ok {
+// 		syscallName = name
+// 	}
 
-	comm := nullTerminatedByteArrayToString(event.Comm[:])
-	logEntry := fmt.Sprintf(
-		"[%s] PID: %d, Comm: %s, Syscall: %s(%d), Return: %d, Args: [0x%x, 0x%x, 0x%x, 0x%x, 0x%x, 0x%x]",
-		time.Unix(0, int64(event.Timestamp)),
-		event.Pid,
-		comm,
-		syscallName,
-		event.SyscallID,
-		event.ReturnValue,
-		event.Args[0], event.Args[1], event.Args[2],
-		event.Args[3], event.Args[4], event.Args[5],
-	)
+// 	comm := nullTerminatedByteArrayToString(event.Comm[:])
+// 	logEntry := fmt.Sprintf(
+// 		"[%s] PID: %d, Comm: %s, Syscall: %s(%d), Return: %d, Args: [0x%x, 0x%x, 0x%x, 0x%x, 0x%x, 0x%x]",
+// 		time.Unix(0, int64(event.Timestamp)),
+// 		event.Pid,
+// 		comm,
+// 		syscallName,
+// 		event.SyscallID,
+// 		event.ReturnValue,
+// 		event.Args[0], event.Args[1], event.Args[2],
+// 		event.Args[3], event.Args[4], event.Args[5],
+// 	)
 
-	// Add to general logs
-	p.addLogEntry(logEntry)
+// 	// Add to general logs
+// 	p.addLogEntry(logEntry)
 
-	// Add to syscall-specific logs
-	if _, ok := p.syscallLogs[event.SyscallID]; !ok {
-		p.syscallLogs[event.SyscallID] = make([]string, 0, 100)
-	}
-	p.syscallLogs[event.SyscallID] = append(p.syscallLogs[event.SyscallID], logEntry)
+// 	// Add to syscall-specific logs
+// 	if _, ok := p.syscallLogs[event.SyscallID]; !ok {
+// 		p.syscallLogs[event.SyscallID] = make([]string, 0, 100)
+// 	}
+// 	p.syscallLogs[event.SyscallID] = append(p.syscallLogs[event.SyscallID], logEntry)
 
-	// Trim if needed
-	if len(p.syscallLogs[event.SyscallID]) > p.logRetention/10 {
-		p.syscallLogs[event.SyscallID] = p.syscallLogs[event.SyscallID][1:]
-	}
+// 	// Trim if needed
+// 	if len(p.syscallLogs[event.SyscallID]) > p.logRetention/10 {
+// 		p.syscallLogs[event.SyscallID] = p.syscallLogs[event.SyscallID][1:]
+// 	}
 
-	return logEntry
-}
+// 	return logEntry
+// }
 
 // logExecveEvent creates a detailed log entry for an execve syscall
 func (p *EBPFProgram) logExecveEvent(event *types.ExecveEvent) string {
