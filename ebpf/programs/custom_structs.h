@@ -13,6 +13,7 @@ struct execve_event {
     char filename[256];
     char args[MAX_ARGS][MAX_ARG_LEN];
     char envp[MAX_DATA_SIZE];
+    // REDUNDANT DELETE LATER
     __u8 args_count;
 };
 
@@ -24,5 +25,6 @@ struct openat_event {
     __u64 flags;
     __u64 mode;
 };
+
 
 #endif // __CUSTOM_STRUCTS_H__

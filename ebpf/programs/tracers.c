@@ -12,8 +12,8 @@
 
 #define MAX_ARG_LEN 256
 /*IMPLEMENT CUSTOM MAP FOR THIS IN C AND TAKE VARIABLES FROM HERE*/
-#define EVENT_TYPE_EXECVE 5
-#define EVENT_TYPE_OPENAT 6
+#define EVENT_TYPE_EXECVE 59
+#define EVENT_TYPE_OPENAT 257
 
 // BPF ringbuf map
 struct {
@@ -32,6 +32,7 @@ int trace_execve_syscall(struct format_syscall_execve *ctx){
         return 0;
     }
     e->eventId = EVENT_TYPE_EXECVE;
+    e->args_count=0;
 
     // Host and Parent tasks
     struct task_struct *task = (struct task_struct *)bpf_get_current_task();
@@ -41,10 +42,9 @@ int trace_execve_syscall(struct format_syscall_execve *ctx){
     // Get Host and Parent PID
     e->host_pid = tgid >>32;
     e->host_ppid = BPF_CORE_READ(parent_task, pid);
-    
     // Get filename path
     bpf_probe_read_user_str(&e->filename, sizeof(e->filename), ctx->filename);
-
+    u8 local_args_count = 0;
 
     #pragma unroll
     for (int i = 0; i < MAX_ARGS; i++) {
@@ -59,13 +59,14 @@ int trace_execve_syscall(struct format_syscall_execve *ctx){
         if (bpf_probe_read_user(&arg_ptr, sizeof(arg_ptr), &ctx->argv[i]) < 0 || !arg_ptr) {
             break;
         }
+        
 
     // Read the argument string into our buffer 
         if (bpf_probe_read_user_str(e->args[i], MAX_ARG_LEN, arg_ptr) > 0) {
-            e->args_count++;
+             local_args_count++;
         }
     }
-
+    e->args_count = local_args_count;
     // Submit event to userspace
     bpf_ringbuf_submit(e, 0);
     return 0;
@@ -93,8 +94,14 @@ int trace_openat_syscall(struct format_syscall_openat *ctx)
     e->host_ppid = BPF_CORE_READ(parent_task, pid);
 
     // Get filename path
-    char *filename_ptr = (char *)ctx->filename;
-    bpf_core_read_user_str(&e->filename, sizeof(e->filename), filename_ptr);
+    // char *filename_ptr = (char *)ctx->filename;
+    // bpf_core_read_user_str(&e->filename, sizeof(e->filename), filename_ptr);
+    const char *filename_ptr;
+    bpf_probe_read_user(&filename_ptr, sizeof(filename_ptr), &ctx->filename);
+    if (filename_ptr) {
+        bpf_probe_read_user_str(e->filename, sizeof(e->filename), filename_ptr);
+    }
+
 
     // Parse flags and mdoe
     e->flags = (u64)ctx->flags;    

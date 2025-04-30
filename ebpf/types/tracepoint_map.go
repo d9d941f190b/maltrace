@@ -22,6 +22,6 @@ var FnToSys = map[string]string{
 var SysToName = map[uint32]string{
 	/*Integrate later*/
 	/*Group by operatio ntype -> network,process,filesystem*/
-	5: "execve",
-	6: "openat",
+	59:  "execve",
+	257: "openat",
 }

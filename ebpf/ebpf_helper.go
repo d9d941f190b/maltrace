@@ -164,8 +164,8 @@ func (p *EBPFProgram) processRawEvents(rawChannel chan []byte) {
 			if len(data) < 1 {
 				continue
 			}
-			// First byte indicates event type
-			eventType := types.EventType(data[0])
+			// First 4  indicate event type
+			eventType := types.EventType(binary.LittleEndian.Uint32(data[0:4]))
 
 			// Check if the event type is valid
 			_, exists := types.SysToName[uint32(eventType)]
@@ -184,7 +184,7 @@ func (p *EBPFProgram) processRawEvents(rawChannel chan []byte) {
 			switch eventType {
 			case types.EVENT_EXECVE:
 				var execve types.ExecveEvent
-				if err := binary.Read(bytes.NewBuffer(data[1:]), binary.LittleEndian, &execve); err != nil {
+				if err := binary.Read(bytes.NewBuffer(data[0:]), binary.LittleEndian, &execve); err != nil {
 					log.Printf("Failed to parse execve event: %v", err)
 					continue
 				}
@@ -193,15 +193,16 @@ func (p *EBPFProgram) processRawEvents(rawChannel chan []byte) {
 
 			case types.EVENT_OPENAT:
 				var openat types.OpenatEvent
-				if err := binary.Read(bytes.NewBuffer(data[1:]), binary.LittleEndian, &openat); err != nil {
+				if err := binary.Read(bytes.NewBuffer(data[0:]), binary.LittleEndian, &openat); err != nil {
 					log.Printf("Failed to parse openat event: %v", err)
 					continue
 				}
+				//log.Printf("filepath %s flags: %d", nullTerminatedByteArrayToString(openat.Filename[:]), openat.Flags)
 				event.Openat = openat
 				event.LogMessage = p.logOpenatEvent(&openat)
 
 			default:
-				log.Printf("Unknown event type: %d", eventType)
+				log.Printf("Unknown event: %d", eventType)
 				continue
 			}
 
@@ -265,17 +266,19 @@ func (p *EBPFProgram) logExecveEvent(event *types.ExecveEvent) string {
 	p.mu.Lock()
 	defer p.mu.Unlock()
 
-	filename := nullTerminatedByteArrayToString(event.Filename[:])
-	args := make([]string, 0, int(event.ArgsCount))
+	command := nullTerminatedByteArrayToString(event.Filename[:])
 
-	for i := 0; i < int(event.ArgsCount) && i < MAX_ARGS; i++ {
+	args := make([]string, 0, MAX_ARGS)
+	for i := 0; i < MAX_ARGS; i++ {
 		arg := nullTerminatedByteArrayToString(event.Args[i][:])
-		args = append(args, arg)
+		if arg != "" {
+			args = append(args, arg)
+		}
 	}
 
 	logEntry := fmt.Sprintf(
 		"[EXECVE] PID: %d, PPID: %d, Command: %s, Args: [%s]",
-		event.Pid, event.PPid, filename, strings.Join(args, " "),
+		event.Pid, event.PPid, command, strings.Join(args, " "),
 	)
 
 	p.addLogEntry(logEntry)
@@ -293,9 +296,8 @@ func (p *EBPFProgram) logExecveEvent(event *types.ExecveEvent) string {
 func (p *EBPFProgram) logOpenatEvent(event *types.OpenatEvent) string {
 	p.mu.Lock()
 	defer p.mu.Unlock()
-
 	filename := nullTerminatedByteArrayToString(event.Filename[:])
-	flagsStr := formatOpenFlags(uint32(event.Flags))
+	flagsStr := formatOpenFlags(event.Flags)
 
 	logEntry := fmt.Sprintf(
 		"[OPENAT] PID: %d, PPID: %d, File: %s, Flags: %s, Mode: %o",
@@ -324,20 +326,32 @@ func (p *EBPFProgram) addLogEntry(logEntry string) {
 }
 
 // formatOpenFlags converts open flags to a human-readable string
-func formatOpenFlags(flags uint32) string {
+func formatOpenFlags(flags uint64) string {
 	var results []string
 
-	// Common open flags
-	flagMap := map[uint32]string{
-		0x0000: "O_RDONLY",
-		0x0001: "O_WRONLY",
-		0x0002: "O_RDWR",
-		0x0040: "O_CREAT",
-		0x0080: "O_EXCL",
-		0x0200: "O_TRUNC",
-		0x0400: "O_APPEND",
-		0x0800: "O_NONBLOCK",
-		0x1000: "O_SYNC",
+	// Complete open flags map
+	flagMap := map[uint64]string{
+		0x0000:      "O_RDONLY",
+		0x0001:      "O_WRONLY",
+		0x0002:      "O_RDWR",
+		0x0040:      "O_CREAT",
+		0x0080:      "O_EXCL",
+		0x0100:      "O_NOCTTY",
+		0x0200:      "O_TRUNC",
+		0x0400:      "O_APPEND",
+		0x0800:      "O_NONBLOCK",
+		0x1000:      "O_SYNC",
+		0x2000:      "O_ASYNC",
+		0x4000:      "O_DIRECT",
+		0x8000:      "O_LARGEFILE", // 0x8000 (32-bit) or 0x100000 (64-bit systems)
+		0x10000:     "O_DIRECTORY",
+		0x20000:     "O_NOFOLLOW",
+		0x40000:     "O_NOATIME",
+		0x80000:     "O_CLOEXEC", // 0x80000 (32-bit) or 0x200000 (64-bit systems)
+		0x100000:    "O_PATH",
+		0x200000:    "O_TMPFILE",
+		0x100000000: "O_LARGEFILE_64BIT", // 64-bit specific value
+		0x200000000: "O_CLOEXEC_64BIT",   // 64-bit specific value
 	}
 
 	// Check for read/write flags first
@@ -355,6 +369,18 @@ func formatOpenFlags(flags uint32) string {
 		if flag != 0x0 && flag != 0x1 && flag != 0x2 && (flags&flag) == flag {
 			results = append(results, name)
 		}
+	}
+
+	// If unrecognized flags remain, add them as hex
+	remainingFlags := flags
+	for flag := range flagMap {
+		if (flags & flag) == flag {
+			remainingFlags &= ^flag
+		}
+	}
+
+	if remainingFlags != 0 {
+		results = append(results, fmt.Sprintf("0x%x", remainingFlags))
 	}
 
 	if len(results) == 0 {

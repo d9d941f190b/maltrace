@@ -31,7 +31,7 @@ type ExecveEvent struct {
 	Filename  [MAX_FILENAME_LEN]byte
 	Args      [MAX_ARGS][MAX_ARG_LEN]byte
 	Envp      [MAX_DATA_SIZE]byte
-	ArgsCount uint8
+	ArgsCount uint8 // Changed from uint32 to uint8 to match the C structure
 }
 
 type OpenatEvent struct {
@@ -39,15 +39,16 @@ type OpenatEvent struct {
 	Pid      uint32
 	PPid     uint32
 	Filename [MAX_FILENAME_LEN]byte
-	Flags    uint32
-	Mode     uint32
+	Flags    uint64
+	Mode     uint64
 }
 
 type EventType uint32
 
+/*INTEGRATE: THIS IS REDUNDANT NECESSARY CHANGES SHOULD BE MADE*/
 const (
-	EVENT_EXECVE = 5
-	EVENT_OPENAT = 6
+	EVENT_EXECVE = 59
+	EVENT_OPENAT = 257
 )
 
 type Event struct {

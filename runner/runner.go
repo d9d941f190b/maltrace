@@ -49,16 +49,18 @@ func Run(ctx context.Context, task *taskType.Task) (*taskType.TaskResult, error)
 	go func() {
 		for log := range logChan {
 			result.Logs = append(result.Logs, log)
-			// Print logs in real-time
 			fmt.Println(log)
 		}
 	}()
 
 	// Execute the target file
 	fmt.Printf("Executing file: %s with timeout %v\n", task.GetFilePath(), task.GetTimeout())
-
 	execResult := executeFile(execCtx, task.GetFilePath())
 	result.Success = (execResult == nil)
+
+	// Wait until timeout
+	fullTimeout := task.GetTimeout()
+	time.Sleep(fullTimeout)
 
 	// Give some time for final logs to be collected
 	time.Sleep(1 * time.Second)

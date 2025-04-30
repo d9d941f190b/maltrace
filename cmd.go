@@ -25,7 +25,7 @@ func main() {
 	fmt.Println(asciiArt)
 
 	// Define command line flags
-	timeout := flag.Duration("t", 60*time.Second, "timeout for the malware execution")
+	timeout := flag.Duration("t", time.Second, "timeout for the malware execution")
 	path := flag.String("p", "", "path to the malware file")
 	output := flag.String("o", "", "path to output file for logs (optional)")
 	help := flag.Bool("help", false, "show help message")
