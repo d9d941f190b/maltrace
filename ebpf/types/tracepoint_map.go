@@ -1,4 +1,4 @@
-package ebpf
+package types
 
 // Syscall list
 const (
@@ -17,6 +17,6 @@ var FnToSys = map[string]string{
 
 var SysToName = map[uint32]string{
 	/*Group by operatio ntype -> network,process,filesystem*/
-	0: "execve",
-	1: "openat",
+	1: "execve",
+	2: "openat",
 }

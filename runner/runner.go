@@ -18,9 +18,9 @@ func Run(ctx context.Context, task *taskType.Task) (*taskType.TaskResult, error)
 	startTime := time.Now()
 
 	// Build eBPF program
-	if err := buildEBPF(); err != nil {
-		return nil, fmt.Errorf("failed to build eBPF program: %w", err)
-	}
+	// if err := buildEBPF(); err != nil {
+	// 	return nil, fmt.Errorf("failed to build eBPF program: %w", err)
+	// }
 
 	// Load eBPF programgo
 	ebpfProgram, err := ebpf.LoadEBPFProgram()
@@ -56,6 +56,7 @@ func Run(ctx context.Context, task *taskType.Task) (*taskType.TaskResult, error)
 
 	// Execute the target file
 	fmt.Printf("Executing file: %s with timeout %v\n", task.GetFilePath(), task.GetTimeout())
+
 	execResult := executeFile(execCtx, task.GetFilePath())
 	result.Success = (execResult == nil)
 
@@ -69,25 +70,25 @@ func Run(ctx context.Context, task *taskType.Task) (*taskType.TaskResult, error)
 }
 
 // buildEBPF runs make clean and make to build the eBPF program
-func buildEBPF() error {
-	fmt.Println("Cleaning previous build...")
-	cleanCmd := exec.Command("make", "clean")
-	cleanCmd.Stdout = os.Stdout
-	cleanCmd.Stderr = os.Stderr
-	if err := cleanCmd.Run(); err != nil {
-		return fmt.Errorf("make clean failed: %w", err)
-	}
+// func buildEBPF() error {
+// 	fmt.Println("Cleaning previous build...")
+// 	cleanCmd := exec.Command("make", "clean")
+// 	cleanCmd.Stdout = os.Stdout
+// 	cleanCmd.Stderr = os.Stderr
+// 	if err := cleanCmd.Run(); err != nil {
+// 		return fmt.Errorf("make clean failed: %w", err)
+// 	}
 
-	fmt.Println("Building eBPF program...")
-	buildCmd := exec.Command("make")
-	buildCmd.Stdout = os.Stdout
-	buildCmd.Stderr = os.Stderr
-	if err := buildCmd.Run(); err != nil {
-		return fmt.Errorf("make failed: %w", err)
-	}
+// 	fmt.Println("Building eBPF program...")
+// 	buildCmd := exec.Command("make")
+// 	buildCmd.Stdout = os.Stdout
+// 	buildCmd.Stderr = os.Stderr
+// 	if err := buildCmd.Run(); err != nil {
+// 		return fmt.Errorf("make failed: %w", err)
+// 	}
 
-	return nil
-}
+// 	return nil
+// }
 
 /*No stats no collectEvents func ;) */
 // collectEvents processes events from the eBPF program and updates result stats
@@ -140,6 +141,8 @@ func buildEBPF() error {
 
 // executeFile runs the target file and monitors its execution
 func executeFile(ctx context.Context, filePath string) error {
+	// Sleep for a bit to allow the eBPF program to initialize
+	time.Sleep(2 * time.Second)
 	fmt.Printf("Executing file: %s\n", filePath)
 
 	// Check if file exists and is executable

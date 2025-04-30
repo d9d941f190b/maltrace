@@ -101,6 +101,8 @@ func LoadEBPFProgramWithOptions(procTTL time.Duration, logRetention int) (*EBPFP
 func (p *EBPFProgram) AttachTracepoints() error {
 	// Attach specific syscall tracers using the mapping
 	for fnName, sysName := range types.FnToSys {
+		/*TESTING*/
+		log.Println(fnName, sysName)
 		parts := strings.Split(sysName, "_")
 		if len(parts) < 3 {
 			return fmt.Errorf("invalid syscall name format: %s", sysName)
@@ -135,6 +137,9 @@ func (p *EBPFProgram) AttachTracepoints() error {
 // attachTracepoint attaches a specific BPF program to a tracepoint
 func (p *EBPFProgram) attachTracepoint(progName, category, tracepoint string) error {
 	prog, err := p.module.GetProgram(progName)
+	/*TESTING*/
+	log.Printf("%s Attached", progName)
+
 	if err != nil {
 		// Program not found, which is fine - maybe this specific tracer isn't included
 		log.Printf("Warning: Program %s not found, skipping", progName)
@@ -159,7 +164,7 @@ func (p *EBPFProgram) processRawEvents(rawChannel chan []byte) {
 			if len(data) < 1 {
 				continue
 			}
-
+			// log.Println(data[1:])
 			// First byte indicates event type
 			eventType := types.EventType(data[0])
 			event := types.Event{

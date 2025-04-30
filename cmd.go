@@ -14,12 +14,10 @@ import (
 )
 
 const asciiArt = `
-   _____           .__    __                                   
-  /     \  _____   |  | _/  |_ _______ _____     ____   ____   
- /  \ /  \ \__  \  |  | \   __\_  __ \\__  \   /  _ \ /    \  
-/    Y    \ / __ \_|  |__|  |   |  | \/ / __ \_|  <_> )   |  \ 
-\____|__  /(____  /|____/|__|   |__|   (____  /|____/|___|  / 
-        \/      \/                          \/            \/                                                 
+ __  __  _____  ____   ____  _____  _____  _____  _____ 
+/  \/  \/  _  \/  _/  /    \/  _  \/  _  \/     \/   __\
+|  \/  ||  _  ||  |---\-  -/|  _  <|  _  ||  |--||   __|
+\__ \__/\__|__/\_____/ |__| \__|\_/\__|__/\_____/\_____/
 `
 
 func main() {
@@ -27,7 +25,7 @@ func main() {
 	fmt.Println(asciiArt)
 
 	// Define command line flags
-	timeout := flag.Duration("t", 30*time.Second, "timeout for the malware execution")
+	timeout := flag.Duration("t", 60*time.Second, "timeout for the malware execution")
 	path := flag.String("p", "", "path to the malware file")
 	output := flag.String("o", "", "path to output file for logs (optional)")
 	help := flag.Bool("help", false, "show help message")

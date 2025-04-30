@@ -11,7 +11,8 @@
 #include "custom_structs.h"
 
 #define MAX_ARG_LEN 256
-
+#define EVENT_TYPE_EXECVE 1
+#define EVENT_TYPE_OPENAT 2
 // BPF ringbuf map
 struct {
     __uint(type, BPF_MAP_TYPE_RINGBUF);
@@ -22,12 +23,13 @@ struct {
 
 SEC("tracepoint/syscalls/sys_enter_execve")
 int trace_execve_syscall(struct format_syscall_execve *ctx){
-    // Buffer initialization
+    // Buffer initialization, eventId setup
     struct execve_event *e;
     e = bpf_ringbuf_reserve(&events, sizeof(*e), 0);
     if (!e) {
         return 0;
     }
+    e->eventId = EVENT_TYPE_EXECVE;
     // Host and Parent tasks
     struct task_struct *task = (struct task_struct *)bpf_get_current_task();
     struct task_struct *parent_task = BPF_CORE_READ(task, real_parent);
@@ -36,7 +38,7 @@ int trace_execve_syscall(struct format_syscall_execve *ctx){
     // Get Host and Parent PID
     e->host_pid = tgid >>32;
     e->host_ppid = BPF_CORE_READ(parent_task, pid);
-
+    
     // Get filename path
     bpf_probe_read_user_str(&e->filename, sizeof(e->filename), ctx->filename);
 
@@ -76,6 +78,8 @@ int trace_openat_syscall(struct format_syscall_openat *ctx)
     if (!e) {
         return 0;
     }
+    e->eventId = EVENT_TYPE_OPENAT;
+
     // Host and Parent tasks
     struct task_struct *task = (struct task_struct *)bpf_get_current_task();
     struct task_struct *parent_task = BPF_CORE_READ(task, real_parent);
