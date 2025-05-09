@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"encoding/json"
 	"flag"
 	"fmt"
 	"os"
@@ -14,10 +15,12 @@ import (
 )
 
 const asciiArt = `
- __  __  _____  ____   ____  _____  _____  _____  _____ 
-/  \/  \/  _  \/  _/  /    \/  _  \/  _  \/     \/   __\
-|  \/  ||  _  ||  |---\-  -/|  _  <|  _  ||  |--||   __|
-\__ \__/\__|__/\_____/ |__| \__|\_/\__|__/\_____/\_____/
+███╗   ███╗ █████╗ ██╗  ████████╗██████╗  █████╗  ██████╗███████╗
+████╗ ████║██╔══██╗██║  ╚══██╔══╝██╔══██╗██╔══██╗██╔════╝██╔════╝
+██╔████╔██║███████║██║     ██║   ██████╔╝███████║██║     █████╗  
+██║╚██╔╝██║██╔══██║██║     ██║   ██╔══██╗██╔══██║██║     ██╔══╝  
+██║ ╚═╝ ██║██║  ██║███████╗██║   ██║  ██║██║  ██║╚██████╗███████╗
+╚═╝     ╚═╝╚═╝  ╚═╝╚══════╝╚═╝   ╚═╝  ╚═╝╚═╝  ╚═╝ ╚═════╝╚══════╝
 `
 
 func main() {
@@ -94,22 +97,39 @@ func printHelp() {
 	fmt.Println("        show this help message")
 	fmt.Println("\nExamples:")
 	fmt.Println("  maltrace -p ./suspicious_file -t 1m")
-	fmt.Println("  maltrace -p /path/to/binary -t 450s -o logs.txt")
+	fmt.Println("  maltrace -p /path/to/binary -t 450s -o logs.json")
 }
 
 // saveLogsToFile saves the logs to a file
-func saveLogsToFile(logs []string, filepath string) error {
-	file, err := os.Create(filepath)
+func saveLogsToFile(logs []string, outputPath string) error {
+	file, err := os.Create(outputPath)
 	if err != nil {
-		return err
+		return fmt.Errorf("failed to create log file: %w", err)
 	}
 	defer file.Close()
 
-	for _, log := range logs {
-		if _, err := fmt.Fprintln(file, log); err != nil {
-			return err
+	encoder := json.NewEncoder(file)
+	// Add indentation for readability
+	encoder.SetIndent("", "  ")
+
+	output := map[string][]interface{}{
+		"events": make([]interface{}, 0, len(logs)),
+	}
+
+	for _, logEntry := range logs {
+		var obj interface{}
+		if err := json.Unmarshal([]byte(logEntry), &obj); err == nil {
+			output["events"] = append(output["events"], obj)
+		} else {
+			fmt.Fprintf(os.Stderr, "Failed to unmarshal log entry: %v - %s\n", err, logEntry)
+			output["events"] = append(output["events"], logEntry)
 		}
 	}
 
+	if err := encoder.Encode(output); err != nil {
+		return fmt.Errorf("failed to encode final JSON structure: %w", err)
+	}
+
+	fmt.Printf("Logs saved to %s in JSON format.\n", outputPath)
 	return nil
 }

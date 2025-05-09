@@ -8,7 +8,7 @@ import (
 	"path/filepath"
 	"time"
 
-	ebpf "bpf-dev/ebpf"
+	"bpf-dev/ebpf"
 	taskType "bpf-dev/runner/tasktypes"
 )
 
@@ -17,12 +17,7 @@ func Run(ctx context.Context, task *taskType.Task) (*taskType.TaskResult, error)
 	fmt.Println("Starting task execution...")
 	startTime := time.Now()
 
-	// Build eBPF program
-	// if err := buildEBPF(); err != nil {
-	// 	return nil, fmt.Errorf("failed to build eBPF program: %w", err)
-	// }
-
-	// Load eBPF programgo
+	// Load eBPF programgik
 	ebpfProgram, err := ebpf.LoadEBPFProgram()
 	if err != nil {
 		return nil, fmt.Errorf("failed to load eBPF program: %w", err)
@@ -35,7 +30,7 @@ func Run(ctx context.Context, task *taskType.Task) (*taskType.TaskResult, error)
 	}
 	fmt.Println("eBPF program loaded and tracepoints attached")
 
-	/* Current collection implementation is with goroutine */
+	// Current collection implementation is with goroutine
 	result := &taskType.TaskResult{
 		Logs: make([]string, 0),
 	}
@@ -49,7 +44,6 @@ func Run(ctx context.Context, task *taskType.Task) (*taskType.TaskResult, error)
 	go func() {
 		for log := range logChan {
 			result.Logs = append(result.Logs, log)
-			fmt.Println(log)
 		}
 	}()
 
@@ -70,76 +64,6 @@ func Run(ctx context.Context, task *taskType.Task) (*taskType.TaskResult, error)
 	fmt.Printf("Task completed in %v.\n", result.ElapsedTime)
 	return result, nil
 }
-
-// buildEBPF runs make clean and make to build the eBPF program
-// func buildEBPF() error {
-// 	fmt.Println("Cleaning previous build...")
-// 	cleanCmd := exec.Command("make", "clean")
-// 	cleanCmd.Stdout = os.Stdout
-// 	cleanCmd.Stderr = os.Stderr
-// 	if err := cleanCmd.Run(); err != nil {
-// 		return fmt.Errorf("make clean failed: %w", err)
-// 	}
-
-// 	fmt.Println("Building eBPF program...")
-// 	buildCmd := exec.Command("make")
-// 	buildCmd.Stdout = os.Stdout
-// 	buildCmd.Stderr = os.Stderr
-// 	if err := buildCmd.Run(); err != nil {
-// 		return fmt.Errorf("make failed: %w", err)
-// 	}
-
-// 	return nil
-// }
-
-/*No stats no collectEvents func ;) */
-// collectEvents processes events from the eBPF program and updates result stats
-// func collectEvents(ctx context.Context, program *ebpf.EBPFProgram, result *taskType.TaskResult, done chan struct{}) {
-// 	defer close(done)
-
-// 	eventChan := program.StreamEvents()
-
-// 	// Process events until context is canceled or channel is closed
-// 	for {
-// 		select {
-// 		case event, ok := <-eventChan:
-// 			if !ok {
-// 				return // Channel closed
-// 			}
-
-// 			// Process based on event type
-// 			switch event.Type {
-// 			case programStructs.EVENT_EXECVE:
-// 				if event.Syscall != nil {
-// 					// Update syscall stats
-// 					syscallID := event.Syscall.SyscallID
-// 					stat, exists := result.SyscallStats[syscallID]
-// 					if !exists {
-// 						stat = SyscallStat{
-// 							Name:    getSyscallName(syscallID),
-// 							Count:   0,
-// 							MinTime: time.Duration(1<<63 - 1), // Max duration
-// 						}
-// 					}
-
-// 					stat.Count++
-// 					// Here we would update timing stats if we had entry/exit pairs
-
-// 					result.SyscallStats[syscallID] = stat
-// 				}
-
-// 			case ebpf.EVENT_EXECVE:
-// 				result.ExecveCount++
-
-// 			case ebpf.EVENT_OPEN:
-// 				result.OpenCount++
-// 			}
-
-// 		case <-ctx.Done():
-// 			return
-// 		}
-// 	}
-// }
 
 // executeFile runs the target file and monitors its execution
 func executeFile(ctx context.Context, filePath string) error {
@@ -202,13 +126,3 @@ func executeFile(ctx context.Context, filePath string) error {
 		return ctx.Err()
 	}
 }
-
-// collectLogs reads logs from the eBPF program and sends them to logChan
-// func collectLogs(program *ebpf.EBPFProgram, logChan chan<- string, doneChan chan<- struct{}) {
-// 	for log := range program.StreamLogs() {
-// 		logChan <- log
-// 		// You can do additional processing with the logs here
-// 		fmt.Println(log)
-// 	}
-// 	close(doneChan)
-// }
