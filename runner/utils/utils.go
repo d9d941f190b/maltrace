@@ -65,3 +65,4 @@ func CalculateFileHash(filePath string) (string, error) {
 
 	return fmt.Sprintf("%x", h.Sum(nil)), nil
 }
+

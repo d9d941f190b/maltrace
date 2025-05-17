@@ -11,9 +11,10 @@ type Task struct {
 }
 
 type TaskResult struct {
-	Success     bool
-	Logs        []string
-	ElapsedTime time.Duration
+	Success      bool
+	SyscallCount int
+	Logs         []string
+	ElapsedTime  time.Duration
 }
 
 // GetTimeout returns the timeout of the task.

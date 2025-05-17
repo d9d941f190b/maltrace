@@ -74,6 +74,7 @@ type SocketEvent struct {
 	Type     uint32
 	Protocol uint32
 }
+
 type SocketLog struct {
 	EventID     uint32        `json:"event_id"`
 	Timestamp   time.Time     `json:"timestamp"`

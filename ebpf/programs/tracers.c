@@ -137,6 +137,8 @@ int trace_socket_syscall(struct format_syscall_socket *ctx){
     e->host_pid = tgid >>32;
     e->host_ppid = BPF_CORE_READ(parent_task, pid);
 
+    // Socket syscall parameters
+    
     e->family = ctx->family;
     e->type = ctx->type;
     e->protocol = ctx->protocol;
