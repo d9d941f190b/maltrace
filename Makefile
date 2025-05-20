@@ -33,3 +33,4 @@ cat:
 
 clean:
 	rm -rf $(OUTPUT)
+	rm -f maltrace

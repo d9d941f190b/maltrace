@@ -28,6 +28,7 @@ type ExecveLog struct {
 	EventID   uint32    `json:"event_id"`
 	Timestamp time.Time `json:"timestamp"`
 	EventType string    `json:"event_type"`
+	Hostname  string    `json:"hostname"`
 	// latter to be merged with type
 	EventName   string        `json:"syscall_name"`
 	ProcessInfo ExecveProcess `json:"process"`
@@ -55,6 +56,7 @@ type OpenatLog struct {
 	Timestamp   time.Time     `json:"timestamp"`
 	EventType   string        `json:"event_type"`
 	EventName   string        `json:"syscall_name"`
+	Hostname    string        `json:"hostname"`
 	ProcessInfo OpenatProcess `json:"process"`
 }
 
@@ -80,6 +82,7 @@ type SocketLog struct {
 	Timestamp   time.Time     `json:"timestamp"`
 	EventType   string        `json:"event_type"`
 	EventName   string        `json:"syscall_name"`
+	Hostname    string        `json:"hostname"`
 	ProcessInfo SocketProcess `json:"process"`
 }
 

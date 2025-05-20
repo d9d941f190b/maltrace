@@ -303,7 +303,7 @@ func (p *EBPFProgram) logExecveEvent(event *types.ExecveEvent) string {
 			args = append(args, arg)
 		}
 	}
-	command := nullTerminatedByteArrayToString(event.Command[:])
+	command := nullTerminatedByteArrayToString(event.Command[:]) + " " + strings.Join(args, " ")
 
 	jsonentry := types.ExecveLog{
 		Timestamp: timestamp,
@@ -405,7 +405,16 @@ func (p *EBPFProgram) logReadEvent(event *types.ReadEvent) string {
 func (p *EBPFProgram) addLogEntry(jsonLogEntry string) {
 	var logData map[string]interface{}
 	if err := json.Unmarshal([]byte(jsonLogEntry), &logData); err == nil {
-		logData["event_id"] = p.generateRandomID()
+		// Add the hostname to the log data
+		hostname, err := utils.GetHostname()
+		if err == nil {
+			logData["hostname"] = hostname
+		} else {
+			fmt.Printf("Error getting hostname: %v\n", err)
+			logData["hostname"] = ""
+		}
+		// generate a random Id then add paranthesis signs to it
+		logData["event_id"] = fmt.Sprintf("\"%d\"", p.generateRandomID())
 		updatedJSON, err := json.Marshal(logData)
 		if err == nil {
 			p.logs = append(p.logs, string(updatedJSON))

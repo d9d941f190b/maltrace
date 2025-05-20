@@ -110,25 +110,33 @@ func saveLogsToFile(logs []string, outputPath string) error {
 
 	encoder := json.NewEncoder(file)
 	// Add indentation for readability
-	encoder.SetIndent("", "  ")
+	// encoder.SetIndent("", "  ")
 
-	output := map[string][]interface{}{
-		"events": make([]interface{}, 0, len(logs)),
-	}
+	// output := map[string][]interface{}{
+	// 	"": make([]interface{}, 0, len(logs)),
+	// }
 
 	for _, logEntry := range logs {
 		var obj interface{}
 		if err := json.Unmarshal([]byte(logEntry), &obj); err == nil {
-			output["events"] = append(output["events"], obj)
+			// output[""] = append(output[""], obj)
+			if err := encoder.Encode(obj); err != nil {
+				return fmt.Errorf("failed to encode JSON object: %w", err)
+			}
 		} else {
+			// fmt.Fprintf(os.Stderr, "Failed to unmarshal log entry: %v - %s\n", err, logEntry)
+			// output[""] = append(output[""], logEntry)
+			_, err := file.WriteString(logEntry + "\n") // Write string + newline.
+			if err != nil {
+				return fmt.Errorf("failed to write string: %w", err)
+			}
 			fmt.Fprintf(os.Stderr, "Failed to unmarshal log entry: %v - %s\n", err, logEntry)
-			output["events"] = append(output["events"], logEntry)
 		}
 	}
 
-	if err := encoder.Encode(output); err != nil {
-		return fmt.Errorf("failed to encode final JSON structure: %w", err)
-	}
+	// if err := encoder.Encode(output); err != nil {
+	// 	return fmt.Errorf("failed to encode final JSON structure: %w", err)
+	// }
 
 	fmt.Printf("Logs saved to %s in JSON format.\n", outputPath)
 	return nil
