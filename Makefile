@@ -24,7 +24,7 @@ LOCAL_LIBBPF_DIR = ./libbpf/src
 
 # Build Go program
 go-build: $(BPF_OBJ)
-	CGO_CFLAGS="-I$(LOCAL_LIBBPF_DIR) " CGO_LDFLAGS="-L$(LOCAL_LIBBPF_DIR) -lelf -lz -lbpf" go build -o maltrace ./cmd.go
+	CGO_CFLAGS="-I$(LOCAL_LIBBPF_DIR) " CGO_LDFLAGS="/usr/lib64/libbpf.a" go build -o maltrace ./cmd.go
 
 run:
 #	sudo LD_LIBRARY_PATH=/usr/lib64 $(OUTPUT)/main
